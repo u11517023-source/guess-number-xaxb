@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>幾 A 幾 B 猜數字遊戲 - 版本一</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .debug-box {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: none;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    input[type="text"] {
+      padding: 8px;
+      font-size: 16px;
+      width: 160px;
+    }
+    button {
+      padding: 8px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .message {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>幾 A 幾 B 猜數字遊戲 (V1)</h2>
+
+  <!-- 除錯模式顯示區（預設關閉） -->
+  <div id="debugBox" class="debug-box">
+    【除錯模式】本局解答：<span id="answerDisplay">----</span>
+  </div>
+
+  <div class="input-group">
+    <label for="guessInput">請輸入 4 個不重複數字（包含首位 0）：</label><br><br>
+    <input type="text" id="guessInput" maxlength="4" placeholder="例如：0123">
+    <button onclick="submitGuess()">送出猜測</button>
+  </div>
+
+  <div>
+    <button onclick="toggleDebug()">切換除錯模式</button>
+    <button onclick="resetGame()">重新開始</button>
+  </div>
+
+  <div id="resultMessage" class="message"></div>
+
+  <script>
+    let currentAnswer = "";
+    let isGameOver = false;
+
+    // 產生 4 個不重複數字的字串 (保留字串格式以支援首位 0)
+    function generateAnswer() {
+      const digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      let result = "";
+      while (result.length < 4) {
+        const randomIndex = Math.floor(Math.random() * digits.length);
+        result += digits.splice(randomIndex, 1)[0];
+      }
+      return result;
+    }
+
+    // 初始化/重新開始新局 (預設關閉除錯顯示)
+    function resetGame() {
+      currentAnswer = generateAnswer();
+      isGameOver = false;
+      document.getElementById("guessInput").value = "";
+      document.getElementById("resultMessage").textContent = "新局已開始，請輸入猜測！";
+      document.getElementById("resultMessage").className = "message";
+      document.getElementById("answerDisplay").textContent = currentAnswer;
+
+      // 初次開啟或重新開始時，預設隱藏除錯區域
+      document.getElementById("debugBox").style.display = "none";
+    }
+
+    // 切換除錯顯示狀態 (不影響遊戲邏輯、不重新抽題)
+    function toggleDebug() {
+      const debugBox = document.getElementById("debugBox");
+      if (debugBox.style.display === "none" || debugBox.style.display === "") {
+        debugBox.style.display = "block";
+      } else {
+        debugBox.style.display = "none";
+      }
+    }
+
+    // 輸入合法性防呆驗證
+    function validateInput(input) {
+      if (input.length !== 4) return "請輸入恰好 4 個位置的數字！";
+      if (!/^\d{4}$/.test(input)) return "輸入包含非數字或空白字元！";
+      const uniqueDigits = new Set(input.split(""));
+      if (uniqueDigits.size !== 4) return "數字不能重複！";
+      return null;
+    }
+
+    // 計算 幾A幾B
+    function calculateAB(answer, guess) {
+      let a = 0, b = 0;
+      for (let i = 0; i < 4; i++) {
+        if (guess[i] === answer[i]) {
+          a++;
+        } else if (answer.includes(guess[i])) {
+          b++;
+        }
+      }
+      return { a, b };
+    }
+
+    // 送出猜測處理
+    function submitGuess() {
+      if (isGameOver) {
+        alert("本局已結束！請按「重新開始」開始新一局。");
+        return;
+      }
+
+      const inputEl = document.getElementById("guessInput");
+      const guess = inputEl.value.trim();
+      const msgEl = document.getElementById("resultMessage");
+
+      // 檢查無效輸入 (跳出提示且不計算有效猜測)
+      const errorMsg = validateInput(guess);
+      if (errorMsg) {
+        msgEl.textContent = "提示：" + errorMsg;
+        msgEl.className = "message error";
+        return;
+      }
+
+      // 計算結果
+      const { a, b } = calculateAB(currentAnswer, guess);
+
+      if (a === 4) {
+        msgEl.textContent = `恭喜答對！答案是 ${currentAnswer} (4A0B)。本局完成！`;
+        msgEl.className = "message";
+        isGameOver = true;
+      } else {
+        msgEl.textContent = `當次結果：${guess} ➔ ${a}A${b}B`;
+        msgEl.className = "message";
+      }
+    }
+
+    // 頁面載入時初始化
+    window.onload = resetGame;
+  </script>
+</body>
+</html>
